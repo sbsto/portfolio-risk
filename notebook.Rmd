@@ -1,0 +1,79 @@
+---
+title: "STAT0011"
+output: html_notebook
+---
+
+## Question 2
+### 2a)
+
+We decided to use the DAX and CAC 40. 
+
+First, we write a function to generate the log returns for each index:
+
+```{r}
+generate_log_returns <- function(file_name) {
+	# read in the data from the csv file
+  data <- read.csv(paste("./original_data/", file_name, ".csv", sep = ""))
+
+	# convert the Price column to numeric format
+	data$Price <- gsub(",", "", data$Price)
+	data$Price <- as.numeric(data$Price)
+
+	# print(data$Price[-1] - data$Price)
+	a <- data$Price[-1]
+	b <- data$Price[-length(data$Price)]
+	print(log(b/a))
+
+	# create a new column for log returns
+	data$log_return <- c(log(data$Price[-length(data$Price)]/data$Price[-1]), 0)
+
+	# write a new 
+  return(data)
+}
+```
+
+Then, we run this function on each of our datasets:
+```{r results='hide'}
+cac_40_log_returns <- generate_log_returns('cac_40')
+dax_log_returns <- generate_log_returns('dax')
+```
+For example, the head of `cac_40_log_returns` looks like:
+```{r}
+head(cac_40_log_returns)
+```
+Then, we generate the weighted portfolio of our resulting datasets:
+```{r, results='hide'}
+# read in the data from the csv file
+dax_data <- read.csv("./log_returns/dax_log_returns.csv")
+cac_40_data <- read.csv("./log_returns/cac_40_log_returns.csv")
+
+# create a new data frame for the weighted portfolio
+weighted_portfolio <- data.frame(Date = dax_log_returns$Date, weighted_log_return = 0.5 * dax_data$log_return + 0.5 * cac_40_log_returns$log_return)
+	
+```
+The head of `weighted_portfolio` looks like:
+```{r}
+head(weighted_portfolio)
+```
+Finally, we use this portfolio to calculate our 99% and 95% VaR.
+
+First, we calculate the mean and standard deviations of the weighted log returns. 
+```{r}
+# calculate the distribution of the weighted log returns
+portfolio_mean <- mean(weighted_portfolio$weighted_log_return)
+portfolio_sd <- sd(weighted_portfolio$weighted_log_return)
+
+# show the mean and standard deviation
+cat("Mean of log returns:", portfolio_mean, "\n")
+cat("Standard devision of log returns:", portfolio_sd, "\n")
+```
+Then, we calculate the VaRs:
+```{r}
+# calculate VaRs
+var_99 <- - (qnorm(0.99) * portfolio_sd - portfolio_mean)
+var_95 <- - (qnorm(0.95) * portfolio_sd - portfolio_mean)
+
+# show the VaR results
+cat("1-week VaR at 99% confidence level:", var_99, "or", -var_99 * 100, "percent.", "\n")
+cat("1-week VaR at 99% confidence level:", var_95, "or", -var_95 * 100, "percent.", "\n")
+```
