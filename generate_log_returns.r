@@ -18,4 +18,4 @@ generate_log_returns <- function(file_name) {
   write.csv(data, paste("./log_returns/", file_name, "_log_returns.csv", sep = ""), row.names = FALSE)
 }
 
-generate_log_returns('dax')
+generate_log_returns('cac_40')
